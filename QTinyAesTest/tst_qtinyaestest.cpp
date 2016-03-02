@@ -2,6 +2,8 @@
 #include <QtTest>
 #include <qtinyaes.h>
 
+#define TEST_ROUNDS 256
+
 class QTinyAesTest : public QObject
 {
 	Q_OBJECT
@@ -12,10 +14,13 @@ public:
 private Q_SLOTS:
 	void initTestCase();
 	void cleanupTestCase();
+
 	void testCBC_data();
 	void testCBC();
 	void testECB_data();
 	void testECB();
+
+	void tinyAEStest();
 
 private:
 	QByteArray generateData(int size);
@@ -40,7 +45,7 @@ void QTinyAesTest::testCBC_data()
 	QTest::addColumn<QByteArray>("key");
 	QTest::addColumn<QByteArray>("iv");
 
-	for(int i = 0; i < 1000; i++) {
+	for(int i = 0; i < TEST_ROUNDS; i++) {
 		QTest::newRow(qPrintable(QStringLiteral("CBC_%1").arg(i)))
 				<< generateData(i * i)
 				<< generateData(16)
@@ -73,7 +78,7 @@ void QTinyAesTest::testECB_data()
 	QTest::addColumn<QByteArray>("key");
 	QTest::addColumn<QByteArray>("iv");
 
-	for(int i = 0; i < 1000; i++) {
+	for(int i = 0; i < TEST_ROUNDS; i++) {
 		QTest::newRow(qPrintable(QStringLiteral("ECB_%1").arg(i)))
 				<< generateData(i * i)
 				<< generateData(16)
@@ -111,3 +116,16 @@ QByteArray QTinyAesTest::generateData(int size)
 QTEST_APPLESS_MAIN(QTinyAesTest)
 
 #include "tst_qtinyaestest.moc"
+
+
+extern "C" {
+#define main mainDelegate
+#include "../QTinyAes/tiny-AES128-C/test.c"
+}
+void QTinyAesTest::tinyAEStest()
+{
+	test_encrypt_cbc();
+	test_decrypt_cbc();
+	test_decrypt_ecb();
+	test_encrypt_ecb();
+}
