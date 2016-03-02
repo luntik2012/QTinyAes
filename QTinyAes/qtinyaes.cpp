@@ -1,5 +1,7 @@
 #include "qtinyaes.h"
-#include "aes.h"
+extern "C" {
+#include "tiny-AES128-C/aes.h"
+}
 #undef CBC
 #undef ECB
 #include <QtMath>
