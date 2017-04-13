@@ -14,7 +14,7 @@ CONFIG   -= app_bundle
 
 TEMPLATE = app
 
-include(../QTinyAes/qtinyaes.pri)
+include(../qtinyaes.pri)
 
 SOURCES += tst_qtinyaestest.cpp
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
