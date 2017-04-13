@@ -5,103 +5,105 @@ extern "C" {
 #undef CBC
 #undef ECB
 #include <QtMath>
+#include <QDebug>
+#include <QtEndian>
 
 const qint32 QTinyAes::BLOCKSIZE = 16;
 const QVector<quint32> QTinyAes::KEYSIZES = {16};
 
 QTinyAes::QTinyAes(QObject *parent) ://TODO auto-generate key
 	QObject(parent),
-	cMode(CBC),
-	mKey(),
-	mIv()
+	_mode(CBC),
+	_key(),
+	_iv()
 {}
 
 QTinyAes::QTinyAes(QTinyAes::CipherMode mode, const QByteArray &key, const QByteArray &iv, QObject *parent) :
 	QObject(parent),
-	cMode(mode),
-	mKey(),
-	mIv()
+	_mode(mode),
+	_key(),
+	_iv()
 {
-	this->setKey(key);
-	this->setIv(iv);
+	setKey(key);
+	setIv(iv);
 }
 
 QTinyAes::~QTinyAes()
 {
-	memset(this->mKey.data(), 0, this->mKey.size());
-	memset(this->mIv.data(), 0, this->mIv.size());
+	memset(_key.data(), 0, _key.size());
+	memset(_iv.data(), 0, _iv.size());
 }
 
 QTinyAes::CipherMode QTinyAes::mode() const
 {
-	return this->cMode;
+	return _mode;
 }
 
 QByteArray QTinyAes::key() const
 {
-	return this->mKey;
+	return _key;
 }
 
 QByteArray QTinyAes::iv() const
 {
-	return this->mIv;
+	return _iv;
 }
 
 void QTinyAes::setMode(QTinyAes::CipherMode mode)
 {
-	this->cMode = mode;
+	_mode = mode;
 }
 
-void QTinyAes::setKey(QByteArray key)
+void QTinyAes::setKey(const QByteArray &key)
 {
 	Q_ASSERT_X(QTinyAes::KEYSIZES.contains(key.size()), Q_FUNC_INFO, "The Key-Length is not a valid length! (Check QTinyAes::KEYSIZES)");
-	this->mKey = key;
+	_key = key;
 }
 
 void QTinyAes::resetKey()
 {
-	memset(this->mKey.data(), 0, this->mKey.size());
-	this->mKey.clear();
+	memset(_key.data(), 0, _key.size());
+	_key.clear();
 }
 
-void QTinyAes::setIv(QByteArray iv)
+void QTinyAes::setIv(const QByteArray &iv)
 {
 	if(iv.isEmpty())
-		this->resetIv();
+		resetIv();
 	else {
 		Q_ASSERT_X(iv.size() >= QTinyAes::BLOCKSIZE, Q_FUNC_INFO, "The initialisation vector must be at least QTinyAes::BLOCKSIZE bytes long (or empty)");
 		if(iv.size() > QTinyAes::BLOCKSIZE)
-			qWarning("IV is longer then QTinyAes::BLOCKSIZE - the rest will be truncated");
-		this->mIv = iv.mid(0, QTinyAes::BLOCKSIZE);
+			qWarning() << "IV is longer then QTinyAes::BLOCKSIZE - the rest will be truncated";
+		_iv = iv.mid(0, QTinyAes::BLOCKSIZE);
 	}
 }
 
 void QTinyAes::resetIv()
 {
-	memset(this->mIv.data(), 0, this->mIv.size());
-	this->mIv.clear();
+	memset(_iv.data(), 0, _iv.size());
+	_iv.clear();
 }
 
 QByteArray QTinyAes::encrypt(QByteArray plain) const
 {
-	Q_ASSERT_X(!this->mKey.isEmpty(), Q_FUNC_INFO, "The key must not be empty to encrypt data");
+	Q_ASSERT_X(!_key.isEmpty(), Q_FUNC_INFO, "The key must not be empty to encrypt data");
 	preparePlainText(plain);
-	QByteArray output(plain.size(), 0);
+	QByteArray output(plain.size(), Qt::Uninitialized);
 
-	switch(this->cMode) {
+	switch(_mode) {
 	case CBC:
 		AES128_CBC_encrypt_buffer((uint8_t*)output.data(),
 								  (uint8_t*)plain.data(),
 								  (uint32_t)plain.size(),
-								  (uint8_t*)this->mKey.data(),
-								  (uint8_t*)(this->mIv.isEmpty() ? NULL : this->mIv.data()));
+								  (uint8_t*)_key.data(),
+								  (uint8_t*)(_iv.isEmpty() ? NULL : _iv.data()));
 		break;
 	case ECB:
 	{
 		int blockCount = plain.size() / QTinyAes::BLOCKSIZE;
 		for(int i = 0; i < blockCount; i++) {
 			AES128_ECB_encrypt((uint8_t*)plain.data() + (i * QTinyAes::BLOCKSIZE),
-							   (uint8_t*)this->mKey.data(),
+							   (uint8_t*)_key.data(),
 							   (uint8_t*)output.data() + (i * QTinyAes::BLOCKSIZE));
 		}
 		break;
@@ -117,23 +119,23 @@ QByteArray QTinyAes::encrypt(QByteArray plain) const
 
 QByteArray QTinyAes::decrypt(QByteArray cipher) const
 {
-	Q_ASSERT_X(!this->mKey.isEmpty(), Q_FUNC_INFO, "The key must not be empty to decrypt data");
-	QByteArray output(cipher.size(), 0);
+	Q_ASSERT_X(!_key.isEmpty(), Q_FUNC_INFO, "The key must not be empty to decrypt data");
+	QByteArray output(cipher.size(), Qt::Uninitialized);
 
-	switch(this->cMode) {
+	switch(_mode) {
 	case CBC:
 		AES128_CBC_decrypt_buffer((uint8_t*)output.data(),
 								  (uint8_t*)cipher.data(),
 								  (uint32_t)cipher.size(),
-								  (uint8_t*)this->mKey.data(),
-								  (uint8_t*)(this->mIv.isEmpty() ? NULL : this->mIv.data()));
+								  (uint8_t*)_key.data(),
+								  (uint8_t*)(_iv.isEmpty() ? NULL : _iv.data()));
 		break;
 	case ECB:
 	{
 		int blockCount = cipher.size() / QTinyAes::BLOCKSIZE;
 		for(int i = 0; i < blockCount; i++) {
 			AES128_ECB_decrypt((uint8_t*)cipher.data() + (i * QTinyAes::BLOCKSIZE),
-							   (uint8_t*)this->mKey.data(),
+							   (uint8_t*)_key.data(),
 							   (uint8_t*)output.data() + (i * QTinyAes::BLOCKSIZE));
 		}
 		break;
@@ -143,28 +145,20 @@ QByteArray QTinyAes::decrypt(QByteArray cipher) const
 		return QByteArray();
 	}
 
-	if(restorePlainText(output))
-		return output;
-	else
-		return QByteArray();
+	restorePlainText(output);
+	return output;
 }
 
 void QTinyAes::preparePlainText(QByteArray &data)
 {
-	quint32 dataLen = data.size();
-	QByteArray preFill = QByteArray::number(dataLen, 16);
-	preFill.prepend(QByteArray(8 - preFill.size(), '0'));
-	data.prepend(preFill);
+	QByteArray dataSize(sizeof(quint32), (char)0);
+	qToBigEndian((quint32)data.size(), dataSize.data());
+	data.prepend(dataSize);
 	data.append(QByteArray(QTinyAes::BLOCKSIZE - (data.size() % QTinyAes::BLOCKSIZE), 0));
 }
 
-bool QTinyAes::restorePlainText(QByteArray &data)
+void QTinyAes::restorePlainText(QByteArray &data)
 {
-	bool ok;
-	qint32 realLength = data.mid(0, 8).toInt(&ok, 16);
-	if(ok) {
-		data = data.mid(8, realLength);
-		return data.size() == realLength;
-	} else
-		return false;
+	auto dataLen = qFromBigEndian<quint32>(data.constData());
+	data = data.mid(sizeof(quint32), dataLen);
 }

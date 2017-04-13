@@ -23,8 +23,8 @@ public:
 	static const qint32 BLOCKSIZE;
 	static const QVector<quint32> KEYSIZES;
 
-	QTinyAes(QObject *parent = NULL);
-	QTinyAes(CipherMode mode, const QByteArray &key, const QByteArray &iv = QByteArray(), QObject *parent = NULL);
+	QTinyAes(QObject *parent = Q_NULLPTR);
+	QTinyAes(CipherMode mode, const QByteArray &key, const QByteArray &iv = QByteArray(), QObject *parent = Q_NULLPTR);
 	~QTinyAes();
 
 	CipherMode mode() const;
@@ -36,18 +36,18 @@ public:
 
 public slots:
 	void setMode(CipherMode mode);
-	void setKey(QByteArray key);
+	void setKey(const QByteArray &key);
 	void resetKey();
-	void setIv(QByteArray iv);
+	void setIv(const QByteArray &iv);
 	void resetIv();
 
 private:
-	CipherMode cMode;
-	QByteArray mKey;
-	QByteArray mIv;
+	CipherMode _mode;
+	QByteArray _key;
+	QByteArray _iv;
 
 	static void preparePlainText(QByteArray &data);
-	static bool restorePlainText(QByteArray &data);
+	static void restorePlainText(QByteArray &data);
 };
 
 #endif // QTINYAES
