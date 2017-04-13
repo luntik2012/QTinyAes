@@ -10,13 +10,14 @@
 	"url": "https://github.com/Skycoder42/QTinyAes.git"
   },
   "version": {
-	"label": "1.0.0",
+	"label": "1.0.1",
 	"revision": "",
 	"fingerprint": ""
   },
   "dependencies": [
+	"de.skycoder42.kokke.tiny-aes128-c@1.0.1"
   ],
   "license": "BSD_3_CLAUSE",
-  "pri_filename": "qtinyaes.pri",
+  "pri_filename": "de_skycoder42_qtinyaes.pri",
   "webpage": "https://github.com/Skycoder42/QTinyAes"
 }

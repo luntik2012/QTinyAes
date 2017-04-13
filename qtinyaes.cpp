@@ -1,6 +1,6 @@
 #include "qtinyaes.h"
 extern "C" {
-#include "tiny-AES128-C/aes.h"
+#include <aes.h>
 }
 #undef CBC
 #undef ECB

@@ -14,7 +14,8 @@ CONFIG   -= app_bundle
 
 TEMPLATE = app
 
-include(../qtinyaes.pri)
+include(../vendor/vendor.pri)
+include(../de_skycoder42_qtinyaes.pri)
 
 SOURCES += tst_qtinyaestest.cpp
 DEFINES += SRCDIR=\\\"$$PWD/\\\"
