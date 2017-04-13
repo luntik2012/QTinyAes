@@ -4,7 +4,7 @@ A Qt-Wrapper for the AES-implementation kokke/tiny-AES128-C
 ## Modules
 This class is simply a wrapper for https://github.com/kokke/tiny-AES128-C. It allows to used the simple AES-implementation inside Qt and with Qt's `QByteArray` class. The repository is included as a git submodule.
 
-##Features
+## Features
  - It's a C++-class instead of just C-functions
  - Easy integration with Qt-Projects thanks to the use of QByteArray
  - Allows plain-texts of any size - padding will be added automatically
