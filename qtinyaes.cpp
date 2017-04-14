@@ -56,7 +56,7 @@ void QTinyAes::setMode(QTinyAes::CipherMode mode)
 
 void QTinyAes::setKey(const QByteArray &key)
 {
-	Q_ASSERT_X(QTinyAes::KEYSIZES.contains(key.size()), Q_FUNC_INFO, "The Key-Length is not a valid length! (Check QTinyAes::KEYSIZES)");
+	Q_ASSERT_X(key.size() != QTinyAes::KEYSIZE, Q_FUNC_INFO, "The Key-Length is not a valid length! (Check QTinyAes::KEYSIZES)");
 	_key = key;
 }
 
@@ -147,6 +147,26 @@ QByteArray QTinyAes::decrypt(QByteArray cipher) const
 
 	restorePlainText(output);
 	return output;
+}
+
+QByteArray QTinyAes::cbcEncrypt(const QByteArray &key, const QByteArray &iv, const QByteArray &plain)
+{
+	return QTinyAes(QTinyAes::CBC, key, iv).encrypt(plain);
+}
+
+QByteArray QTinyAes::cbcDecrypt(const QByteArray &key, const QByteArray &iv, const QByteArray &cipher)
+{
+	return QTinyAes(QTinyAes::CBC, key, iv).decrypt(cipher);
+}
+
+QByteArray QTinyAes::ecbEncrypt(const QByteArray &key, const QByteArray &plain)
+{
+	return QTinyAes(QTinyAes::ECB, key).encrypt(plain);
+}
+
+QByteArray QTinyAes::ecbDecrypt(const QByteArray &key, const QByteArray &cipher)
+{
+	return QTinyAes(QTinyAes::ECB, key).decrypt(cipher);
 }
 
 void QTinyAes::preparePlainText(QByteArray &data)

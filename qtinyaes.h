@@ -34,6 +34,11 @@ public:
 	Q_INVOKABLE QByteArray encrypt(QByteArray plain) const;
 	Q_INVOKABLE QByteArray decrypt(QByteArray cipher) const;
 
+	static QByteArray cbcEncrypt(const QByteArray &key, const QByteArray &iv, const QByteArray &plain);
+	static QByteArray cbcDecrypt(const QByteArray &key, const QByteArray &iv, const QByteArray &cipher);
+	static QByteArray ecbEncrypt(const QByteArray &key, const QByteArray &plain);
+	static QByteArray ecbDecrypt(const QByteArray &key, const QByteArray &cipher);
+
 public slots:
 	void setMode(CipherMode mode);
 	void setKey(const QByteArray &key);
