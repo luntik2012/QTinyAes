@@ -56,7 +56,7 @@ void QTinyAes::setMode(QTinyAes::CipherMode mode)
 
 void QTinyAes::setKey(const QByteArray &key)
 {
-	Q_ASSERT_X(key.size() != QTinyAes::KEYSIZE, Q_FUNC_INFO, "The Key-Length is not a valid length! (Check QTinyAes::KEYSIZES)");
+	Q_ASSERT_X(key.size() == QTinyAes::KEYSIZE, Q_FUNC_INFO, "The Key-Length is not a valid length! (Check QTinyAes::KEYSIZES)");
 	_key = key;
 }
 
