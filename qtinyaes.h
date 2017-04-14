@@ -21,7 +21,7 @@ public:
 	Q_ENUM(CipherMode)
 
 	static const qint32 BLOCKSIZE;
-	static const QVector<quint32> KEYSIZES;
+	static const quint32 KEYSIZE;
 
 	QTinyAes(QObject *parent = Q_NULLPTR);
 	QTinyAes(CipherMode mode, const QByteArray &key, const QByteArray &iv = QByteArray(), QObject *parent = Q_NULLPTR);

@@ -9,7 +9,7 @@ extern "C" {
 #include <QtEndian>
 
 const qint32 QTinyAes::BLOCKSIZE = 16;
-const QVector<quint32> QTinyAes::KEYSIZES = {16};
+const quint32 QTinyAes::KEYSIZE = 16;
 
 QTinyAes::QTinyAes(QObject *parent) ://TODO auto-generate key
 	QObject(parent),
