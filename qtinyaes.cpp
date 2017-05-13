@@ -172,13 +172,21 @@ QByteArray QTinyAes::ecbDecrypt(const QByteArray &key, const QByteArray &cipher)
 void QTinyAes::preparePlainText(QByteArray &data)
 {
 	QByteArray dataSize(sizeof(quint32), (char)0);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 7, 0))
 	qToBigEndian((quint32)data.size(), dataSize.data());
+#else
+	qToBigEndian((quint32)data.size(), (uchar*)dataSize.data());
+#endif
 	data.prepend(dataSize);
 	data.append(QByteArray(QTinyAes::BLOCKSIZE - (data.size() % QTinyAes::BLOCKSIZE), 0));
 }
 
 void QTinyAes::restorePlainText(QByteArray &data)
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 7, 0))
 	auto dataLen = qFromBigEndian<quint32>(data.constData());
+#else
+	auto dataLen = qFromBigEndian<quint32>((const uchar*)data.constData());
+#endif
 	data = data.mid(sizeof(quint32), dataLen);
 }
