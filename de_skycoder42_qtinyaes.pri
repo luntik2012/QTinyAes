@@ -1,3 +1,6 @@
+isEmpty(QTAES_KEYSIZE): QTAES_KEYSIZE = 256
+DEFINES += AES$$QTAES_KEYSIZE=1
+
 HEADERS += $$PWD/qtinyaes.h
 SOURCES += $$PWD/qtinyaes.cpp
 

@@ -1,8 +1,4 @@
-HEADERS += $$PWD/tiny-AES128-C/aes.h \
-	$$PWD/qtinyaes.h
+include($$PWD/de_skycoder42_qtinyaes.pri)
 
-SOURCES += \
-	$$PWD/qtinyaes.cpp \
-	$$PWD/tiny-AES128-C/aes.c
-
-INCLUDEPATH += $$PWD
+HEADERS += $$PWD/tiny-AES128-C/aes.h
+SOURCES += $$PWD/tiny-AES128-C/aes.c

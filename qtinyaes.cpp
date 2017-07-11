@@ -9,7 +9,13 @@ extern "C" {
 #include <QtEndian>
 
 const qint32 QTinyAes::BLOCKSIZE = 16;
+#if defined(AES256) && (AES256 == 1)
+const quint32 QTinyAes::KEYSIZE = 32;
+#elif defined(AES192) && (AES192 == 1)
+const quint32 QTinyAes::KEYSIZE = 24;
+#else
 const quint32 QTinyAes::KEYSIZE = 16;
+#endif
 
 QTinyAes::QTinyAes(QObject *parent) ://TODO auto-generate key
 	QObject(parent),
@@ -56,7 +62,7 @@ void QTinyAes::setMode(QTinyAes::CipherMode mode)
 
 void QTinyAes::setKey(const QByteArray &key)
 {
-	Q_ASSERT_X(key.size() == QTinyAes::KEYSIZE, Q_FUNC_INFO, "The Key-Length is not a valid length! (Check QTinyAes::KEYSIZES)");
+	Q_ASSERT_X(key.size() == QTinyAes::KEYSIZE, Q_FUNC_INFO, "The Key-Length is not a valid length! (Check QTinyAes::KEYSIZE)");
 	_key = key;
 }
 
@@ -92,22 +98,18 @@ QByteArray QTinyAes::encrypt(QByteArray plain) const
 
 	switch(_mode) {
 	case CBC:
-		AES128_CBC_encrypt_buffer((uint8_t*)output.data(),
-								  (uint8_t*)plain.data(),
-								  (uint32_t)plain.size(),
-								  (uint8_t*)_key.data(),
-								  (uint8_t*)(_iv.isEmpty() ? NULL : _iv.data()));
+		AES_CBC_encrypt_buffer((uint8_t*)output.data(),
+							   (uint8_t*)plain.data(),
+							   (uint32_t)plain.size(),
+							   (uint8_t*)_key.data(),
+							   (uint8_t*)(_iv.isEmpty() ? NULL : _iv.data()));
 		break;
 	case ECB:
-	{
-		int blockCount = plain.size() / QTinyAes::BLOCKSIZE;
-		for(int i = 0; i < blockCount; i++) {
-			AES128_ECB_encrypt((uint8_t*)plain.data() + (i * QTinyAes::BLOCKSIZE),
-							   (uint8_t*)_key.data(),
-							   (uint8_t*)output.data() + (i * QTinyAes::BLOCKSIZE));
-		}
+		AES_ECB_encrypt((uint8_t*)plain.data(),
+						(uint8_t*)_key.data(),
+						(uint8_t*)output.data(),
+						(uint32_t)plain.size());
 		break;
-	}
 	default:
 		Q_UNREACHABLE();
 		return QByteArray();
@@ -124,22 +126,18 @@ QByteArray QTinyAes::decrypt(QByteArray cipher) const
 
 	switch(_mode) {
 	case CBC:
-		AES128_CBC_decrypt_buffer((uint8_t*)output.data(),
-								  (uint8_t*)cipher.data(),
-								  (uint32_t)cipher.size(),
-								  (uint8_t*)_key.data(),
-								  (uint8_t*)(_iv.isEmpty() ? NULL : _iv.data()));
+		AES_CBC_decrypt_buffer((uint8_t*)output.data(),
+							   (uint8_t*)cipher.data(),
+							   (uint32_t)cipher.size(),
+							   (uint8_t*)_key.data(),
+							   (uint8_t*)(_iv.isEmpty() ? NULL : _iv.data()));
 		break;
 	case ECB:
-	{
-		int blockCount = cipher.size() / QTinyAes::BLOCKSIZE;
-		for(int i = 0; i < blockCount; i++) {
-			AES128_ECB_decrypt((uint8_t*)cipher.data() + (i * QTinyAes::BLOCKSIZE),
-							   (uint8_t*)_key.data(),
-							   (uint8_t*)output.data() + (i * QTinyAes::BLOCKSIZE));
-		}
+		AES_ECB_decrypt((uint8_t*)cipher.data(),
+						(uint8_t*)_key.data(),
+						(uint8_t*)output.data(),
+						(uint32_t)cipher.size());
 		break;
-	}
 	default:
 		Q_UNREACHABLE();
 		return QByteArray();

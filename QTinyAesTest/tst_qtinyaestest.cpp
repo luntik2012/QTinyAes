@@ -15,12 +15,12 @@ private Q_SLOTS:
 	void initTestCase();
 	void cleanupTestCase();
 
+	void tinyAEStest();
+
 	void testCBC_data();
 	void testCBC();
 	void testECB_data();
 	void testECB();
-
-	void tinyAEStest();
 
 private:
 	QByteArray generateData(int size);
