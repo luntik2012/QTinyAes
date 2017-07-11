@@ -1,13 +1,14 @@
 # QTinyAes
-A Qt-Wrapper for the AES-implementation kokke/tiny-AES128-C
+A Qt-Wrapper for the AES-implementation kokke/tiny-AES128-C (supports AES128/192/256)
 
-This class is simply a wrapper for https://github.com/kokke/tiny-AES128-C. It allows to use the simple AES-implementation inside Qt and with Qt's `QByteArray` class.
+This class is simply a wrapper for https://github.com/kokke/tiny-AES128-C. It allows to use the simple AES-implementation inside Qt and with Qt's `QByteArray` class. Thanks to recent updates, allowing keys of size 128, 192 and 256.
 
 ## Features
  - It's a C++-class instead of just C-functions
  - Easy integration with Qt-Projects thanks to the use of QByteArray
  - Allows plain-texts of any size - padding will be added automatically
- 
+ - Supports all common AES keysizes (compile-time switch)
+
 ## Installation
 The package is providet as qpm package, [`de.skycoder42.qtinyaes`](https://www.qpm.io/packages/de.skycoder42.qtinyaes/index.html). To install:
 
@@ -26,8 +27,8 @@ Check their [GitHub - Usage for App Developers](https://github.com/Cutehacks/qpm
 QTinyAes aes;
 
 aes.setMode(QTinyAes::CBC);
-aes.setKey("randomkey_128bit");// 128 bit key -> QTinyAes::KEYSIZES must contain the size
-aes.setIv("random_iv_128bit");//QTinyAes::BLOCKSIZE
+aes.setKey("randomkey_256bit");// QTinyAes::KEYSIZE (256 bit key)
+aes.setIv("random_iv_128bit");// QTinyAes::BLOCKSIZE (128 iv vector)
 
 QByteArray plain = "Hello World";
 qDebug() << "plain:" << plain
@@ -35,4 +36,15 @@ QByteArray cipher = aes.encrypt(plain);
 qDebug() << "cipher:" << cipher;
 QByteArray result = aes.decrypt(cipher);
 qDebug() << "result:" << result;
-``
+```
+
+## Changing the key size
+By default, your keys must be 256 bit keys. However, you can change this size to 192 or 128 if you need to. This can be done via a qmake variable, as the keysize as a **compile time** switch (due to limitations of kokke/tiny-AES128-C).
+
+To change the size, set the `QTAES_KEYSIZE` qmake variable to the desired keysize *before* including vendor.pri/qtinyaes.pri:
+
+```pro
+QTAES_KEYSIZE = 128 #or 192 or the default, 256
+
+include(vendor/vendor.pri) #or qtinyaes.pri, when not using qpm
+```
