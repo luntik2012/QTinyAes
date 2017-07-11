@@ -48,8 +48,8 @@ void QTinyAesTest::testCBC_data()
 	for(int i = 0; i < TEST_ROUNDS; i++) {
 		QTest::newRow(qPrintable(QStringLiteral("CBC_%1").arg(i)))
 				<< generateData(i * i)
-				<< generateData(16)
-				<< generateData(16);
+				<< generateData(QTinyAes::KEYSIZE)
+				<< generateData(QTinyAes::BLOCKSIZE);
 	}
 }
 
@@ -81,8 +81,8 @@ void QTinyAesTest::testECB_data()
 	for(int i = 0; i < TEST_ROUNDS; i++) {
 		QTest::newRow(qPrintable(QStringLiteral("ECB_%1").arg(i)))
 				<< generateData(i * i)
-				<< generateData(16)
-				<< generateData(16);
+				<< generateData(QTinyAes::KEYSIZE)
+				<< generateData(QTinyAes::BLOCKSIZE);
 	}
 }
 
