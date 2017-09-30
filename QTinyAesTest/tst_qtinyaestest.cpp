@@ -15,8 +15,6 @@ private Q_SLOTS:
 	void initTestCase();
 	void cleanupTestCase();
 
-	void tinyAEStest();
-
 	void testCBC_data();
 	void testCBC();
 	void testECB_data();
@@ -116,16 +114,3 @@ QByteArray QTinyAesTest::generateData(int size)
 QTEST_APPLESS_MAIN(QTinyAesTest)
 
 #include "tst_qtinyaestest.moc"
-
-
-extern "C" {
-#define main mainDelegate
-#include "../QTinyAes/tiny-AES128-C/test.c"
-}
-void QTinyAesTest::tinyAEStest()
-{
-	test_encrypt_cbc();
-	test_decrypt_cbc();
-	test_decrypt_ecb();
-	test_encrypt_ecb();
-}
