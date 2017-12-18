@@ -5,6 +5,7 @@
 #include <QByteArray>
 #include <QVector>
 
+class QTinyAesPrivate;
 class QTinyAes : public QObject
 {
 	Q_OBJECT
@@ -15,25 +16,32 @@ class QTinyAes : public QObject
 
 public:
 	enum CipherMode {
+		CTR,
 		CBC,
 		ECB
 	};
 	Q_ENUM(CipherMode)
 
-	static const qint32 BLOCKSIZE;
-	static const quint32 KEYSIZE;
+	static const int BlockSize;
+	static const int KeySize;
 
-	QTinyAes(QObject *parent = Q_NULLPTR);
-	QTinyAes(CipherMode mode, const QByteArray &key, const QByteArray &iv = QByteArray(), QObject *parent = Q_NULLPTR);
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
+	static QByteArray generateKey();
+#endif
+
+	QTinyAes(QObject *parent = nullptr);
+	QTinyAes(CipherMode mode, const QByteArray &key, const QByteArray &iv = QByteArray(), QObject *parent = nullptr);
 	~QTinyAes();
 
 	CipherMode mode() const;
 	QByteArray key() const;
 	QByteArray iv() const;
 
-	Q_INVOKABLE QByteArray encrypt(QByteArray plain) const;
-	Q_INVOKABLE QByteArray decrypt(QByteArray cipher) const;
+	Q_INVOKABLE QByteArray encrypt(const QByteArray &plain) const;
+	Q_INVOKABLE QByteArray decrypt(const QByteArray &cipher) const;
 
+	static QByteArray ctrEncrypt(const QByteArray &key, const QByteArray &iv, const QByteArray &plain);
+	static QByteArray ctrDecrypt(const QByteArray &key, const QByteArray &iv, const QByteArray &cipher);
 	static QByteArray cbcEncrypt(const QByteArray &key, const QByteArray &iv, const QByteArray &plain);
 	static QByteArray cbcDecrypt(const QByteArray &key, const QByteArray &iv, const QByteArray &cipher);
 	static QByteArray ecbEncrypt(const QByteArray &key, const QByteArray &plain);
@@ -47,9 +55,7 @@ public slots:
 	void resetIv();
 
 private:
-	CipherMode _mode;
-	QByteArray _key;
-	QByteArray _iv;
+	QScopedPointer<QTinyAesPrivate> d;
 
 	static void preparePlainText(QByteArray &data);
 	static void restorePlainText(QByteArray &data);

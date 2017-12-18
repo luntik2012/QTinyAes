@@ -1,13 +1,14 @@
 # QTinyAes
-A Qt-Wrapper for the AES-implementation kokke/tiny-AES128-C (supports AES128/192/256)
+A Qt-Wrapper for the AES-implementation kokke/tiny-AES-C (supports AES128/192/256)
 
-This class is simply a wrapper for https://github.com/kokke/tiny-AES128-C. It allows to use the simple AES-implementation inside Qt and with Qt's `QByteArray` class. Thanks to recent updates, allowing keys of size 128, 192 and 256.
+This class is simply a wrapper for https://github.com/kokke/tiny-AES-C. It allows to use the simple AES-implementation inside Qt and with Qt's `QByteArray` class. Thanks to recent updates, allowing keys of size 128, 192 and 256.
 
 ## Features
  - It's a C++-class instead of just C-functions
  - Easy integration with Qt-Projects thanks to the use of QByteArray
- - Allows plain-texts of any size - padding will be added automatically
+ - Allows plain-texts of any size - [#PKCS7 Padding](https://en.wikipedia.org/wiki/Padding_(cryptography)#PKCS7) is added automatically
  - Supports all common AES keysizes (compile-time switch)
+ - Currently supports CTR, CBC and ECB as modes
 
 ## Installation
 The package is providet as qpm package, [`de.skycoder42.qtinyaes`](https://www.qpm.io/packages/de.skycoder42.qtinyaes/index.html). To install:
@@ -26,9 +27,11 @@ Check their [GitHub - Usage for App Developers](https://github.com/Cutehacks/qpm
 ```cpp
 QTinyAes aes;
 
-aes.setMode(QTinyAes::CBC);
-aes.setKey("randomkey_256bit");// QTinyAes::KEYSIZE (256 bit key)
-aes.setIv("random_iv_128bit");// QTinyAes::BLOCKSIZE (128 iv vector)
+aes.setMode(QTinyAes::CTR);
+aes.setKey("randomkey_256bit");// QTinyAes::KeySize (256 bit key by default)
+//or with Qt 5.10
+aes.setKey(QTinyAes::generateKey());
+aes.setIv("random_iv_128bit");// QTinyAes::BlockSize (128 iv vector)
 
 QByteArray plain = "Hello World";
 qDebug() << "plain:" << plain
@@ -39,12 +42,12 @@ qDebug() << "result:" << result;
 ```
 
 ## Changing the key size
-By default, your keys must be 256 bit keys. However, you can change this size to 192 or 128 if you need to. This can be done via a qmake variable, as the keysize as a **compile time** switch (due to limitations of kokke/tiny-AES128-C).
+By default, your keys must be 256 bit keys. However, you can change this size to 192 or 128 if you need to. This can be done via a qmake variable, as the keysize as a **compile time** switch (due to limitations of kokke/tiny-AES-C).
 
-To change the size, set the `QTAES_KEYSIZE` qmake variable to the desired keysize *before* including vendor.pri/qtinyaes.pri:
+To change the size, set the `TINYAES_KEYSIZE` qmake variable to the desired keysize *before* including vendor.pri/add the qpmx code. Note that for qpmx this only works on source builds, not on compile builds:
 
 ```pro
-QTAES_KEYSIZE = 128 #or 192 or the default, 256
+TINYAES_KEYSIZE = 128 #or 192 or the default, 256
 
-include(vendor/vendor.pri) #or qtinyaes.pri, when not using qpm
+include(vendor/vendor.pri) #or qpmx stuff
 ```

@@ -1,9 +1,9 @@
 {
     "dependencies": [
         {
-            "package": "de.skycoder42.kokke.tiny-aes128-c",
+            "package": "de.skycoder42.kokke.tiny-aes-c",
             "provider": "qpm",
-            "version": "2.1.0"
+            "version": "3.0.2"
         }
     ],
     "license": {

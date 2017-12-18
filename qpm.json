@@ -4,7 +4,7 @@
         "name": "Skycoder"
     },
     "dependencies": [
-        "de.skycoder42.kokke.tiny-aes128-c@2.1.0"
+        "de.skycoder42.kokke.tiny-aes-c@3.0.2"
     ],
     "description": "A Qt-Wrapper for the AES-implementation kokke/tiny-AES128-C",
     "license": "BSD_3_CLAUSE",
@@ -16,7 +16,7 @@
     },
     "version": {
         "fingerprint": "",
-        "label": "2.1.0",
+        "label": "3.0.0",
         "revision": ""
     },
     "webpage": "https://github.com/Skycoder42/QTinyAes"

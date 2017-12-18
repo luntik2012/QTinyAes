@@ -1,150 +1,193 @@
 #include "qtinyaes.h"
+
+#include <QtMath>
+#include <QDebug>
+#include <QtEndian>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
+#include <QRandomGenerator>
+#endif
+
 extern "C" {
 #include <aes.h>
 }
 #undef CBC
 #undef ECB
-#include <QtMath>
-#include <QDebug>
-#include <QtEndian>
+#undef CTR
 
-const qint32 QTinyAes::BLOCKSIZE = 16;
-#if defined(AES256) && (AES256 == 1)
-const quint32 QTinyAes::KEYSIZE = 32;
-#elif defined(AES192) && (AES192 == 1)
-const quint32 QTinyAes::KEYSIZE = 24;
-#else
-const quint32 QTinyAes::KEYSIZE = 16;
+const int QTinyAes::BlockSize(AES_BLOCKLEN);
+const int QTinyAes::KeySize(AES_KEYLEN);
+
+class QTinyAesPrivate
+{
+public:
+	QTinyAesPrivate();
+
+	QTinyAes::CipherMode mode;
+	QByteArray key;
+	QByteArray iv;
+};
+
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
+QByteArray QTinyAes::generateKey()
+{
+	static_assert(KeySize >= sizeof(quint64), "Invalid aes keysize?!?");
+	QByteArray key(KeySize, Qt::Uninitialized);
+	auto rng = QRandomGenerator64::system();
+	rng->fillRange((quint64*)key.data(), key.size()/sizeof(quint64));
+	return key;
+}
 #endif
 
-QTinyAes::QTinyAes(QObject *parent) ://TODO auto-generate key
+QTinyAes::QTinyAes(QObject *parent) :
 	QObject(parent),
-	_mode(CBC),
-	_key(),
-	_iv()
+	d(new QTinyAesPrivate())
 {}
 
 QTinyAes::QTinyAes(QTinyAes::CipherMode mode, const QByteArray &key, const QByteArray &iv, QObject *parent) :
-	QObject(parent),
-	_mode(mode),
-	_key(),
-	_iv()
+	QTinyAes(parent)
 {
-	setKey(key);
-	setIv(iv);
+	d->mode = mode;
+	d->key = key;
+	d->iv = iv;
 }
 
 QTinyAes::~QTinyAes()
 {
-	memset(_key.data(), 0, _key.size());
-	memset(_iv.data(), 0, _iv.size());
+	memset(d->key.data(), 0, d->key.size());
+	memset(d->iv.data(), 0, d->iv.size());
 }
 
 QTinyAes::CipherMode QTinyAes::mode() const
 {
-	return _mode;
+	return d->mode;
 }
 
 QByteArray QTinyAes::key() const
 {
-	return _key;
+	return d->key;
 }
 
 QByteArray QTinyAes::iv() const
 {
-	return _iv;
+	return d->iv;
 }
 
 void QTinyAes::setMode(QTinyAes::CipherMode mode)
 {
-	_mode = mode;
+	d->mode = mode;
 }
 
 void QTinyAes::setKey(const QByteArray &key)
 {
-	Q_ASSERT_X(key.size() == QTinyAes::KEYSIZE, Q_FUNC_INFO, "The Key-Length is not a valid length! (Check QTinyAes::KEYSIZE)");
-	_key = key;
+	resetKey();
+	Q_ASSERT_X(key.size() == KeySize, Q_FUNC_INFO, "The Key-Length is not a valid length! (Check QTinyAes::KEYSIZE)");
+	d->key = key;
 }
 
 void QTinyAes::resetKey()
 {
-	memset(_key.data(), 0, _key.size());
-	_key.clear();
+	memset(d->key.data(), 0, d->key.size());
+	d->key.clear();
 }
 
 void QTinyAes::setIv(const QByteArray &iv)
 {
-	if(iv.isEmpty())
-		resetIv();
-	else {
-		Q_ASSERT_X(iv.size() >= QTinyAes::BLOCKSIZE, Q_FUNC_INFO, "The initialisation vector must be at least QTinyAes::BLOCKSIZE bytes long (or empty)");
-		if(iv.size() > QTinyAes::BLOCKSIZE)
+	resetIv();
+	if(!iv.isEmpty()) {
+		Q_ASSERT_X(iv.size() >= BlockSize, Q_FUNC_INFO, "The initialisation vector must be at least QTinyAes::BLOCKSIZE bytes long (or empty)");
+		if(iv.size() > BlockSize)
 			qWarning() << "IV is longer then QTinyAes::BLOCKSIZE - the rest will be truncated";
-		_iv = iv.mid(0, QTinyAes::BLOCKSIZE);
+		d->iv = iv.mid(0, BlockSize);
 	}
 }
 
 void QTinyAes::resetIv()
 {
-	memset(_iv.data(), 0, _iv.size());
-	_iv.clear();
+	memset(d->iv.data(), 0, d->iv.size());
+	d->iv.clear();
 }
 
-QByteArray QTinyAes::encrypt(QByteArray plain) const
+QByteArray QTinyAes::encrypt(const QByteArray &plain) const
 {
-	Q_ASSERT_X(!_key.isEmpty(), Q_FUNC_INFO, "The key must not be empty to encrypt data");
-	preparePlainText(plain);
-	QByteArray output(plain.size(), Qt::Uninitialized);
+	Q_ASSERT_X(!d->key.isEmpty(), Q_FUNC_INFO, "The key must not be empty to encrypt data");
+	auto buffer = plain;
+	preparePlainText(buffer);
 
-	switch(_mode) {
+	AES_ctx ctx;
+	if(d->iv.isNull())
+		AES_init_ctx(&ctx, (uint8_t*)d->key.constData());
+	else
+		AES_init_ctx_iv(&ctx, (uint8_t*)d->key.constData(), (uint8_t*)d->iv.constData());
+
+	switch(d->mode) {
+	case CTR:
+		AES_CTR_xcrypt_buffer(&ctx, (uint8_t*)buffer.data(), (uint32_t)buffer.size());
+		break;
 	case CBC:
-		AES_CBC_encrypt_buffer((uint8_t*)output.data(),
-							   (uint8_t*)plain.data(),
-							   (uint32_t)plain.size(),
-							   (uint8_t*)_key.data(),
-							   (uint8_t*)(_iv.isEmpty() ? NULL : _iv.data()));
+		AES_CBC_encrypt_buffer(&ctx, (uint8_t*)buffer.data(),  (uint32_t)buffer.size());
 		break;
 	case ECB:
-		AES_ECB_encrypt((uint8_t*)plain.data(),
-						(uint8_t*)_key.data(),
-						(uint8_t*)output.data(),
-						(uint32_t)plain.size());
+		for(auto i = 0; i < buffer.size(); i += BlockSize) {
+			auto ctxCopy = ctx;
+			AES_ECB_encrypt(&ctxCopy, (uint8_t*)(buffer.data() + i));
+		}
 		break;
 	default:
 		Q_UNREACHABLE();
-		return QByteArray();
+		break;
 	}
 
-	return output;
+	memset(&ctx, 0, sizeof(AES_ctx));
+
+	return buffer;
 
 }
 
-QByteArray QTinyAes::decrypt(QByteArray cipher) const
+QByteArray QTinyAes::decrypt(const QByteArray &cipher) const
 {
-	Q_ASSERT_X(!_key.isEmpty(), Q_FUNC_INFO, "The key must not be empty to decrypt data");
-	QByteArray output(cipher.size(), Qt::Uninitialized);
+	Q_ASSERT_X(!d->key.isEmpty(), Q_FUNC_INFO, "The key must not be empty to decrypt data");
+	auto buffer = cipher;
 
-	switch(_mode) {
+	AES_ctx ctx;
+	if(d->iv.isNull())
+		AES_init_ctx(&ctx, (uint8_t*)d->key.constData());
+	else
+		AES_init_ctx_iv(&ctx, (uint8_t*)d->key.constData(), (uint8_t*)d->iv.constData());
+
+	switch(d->mode) {
+	case CTR:
+		AES_CTR_xcrypt_buffer(&ctx,
+							  (uint8_t*)buffer.data(),
+							  (uint32_t)buffer.size());
+		break;
 	case CBC:
-		AES_CBC_decrypt_buffer((uint8_t*)output.data(),
-							   (uint8_t*)cipher.data(),
-							   (uint32_t)cipher.size(),
-							   (uint8_t*)_key.data(),
-							   (uint8_t*)(_iv.isEmpty() ? NULL : _iv.data()));
+		AES_CBC_decrypt_buffer(&ctx,
+							   (uint8_t*)buffer.data(),
+							   (uint32_t)buffer.size());
 		break;
 	case ECB:
-		AES_ECB_decrypt((uint8_t*)cipher.data(),
-						(uint8_t*)_key.data(),
-						(uint8_t*)output.data(),
-						(uint32_t)cipher.size());
+		for(auto i = 0; i < buffer.size(); i += BlockSize) {
+			auto ctxCopy = ctx;
+			AES_ECB_decrypt(&ctxCopy, (uint8_t*)(buffer.data() + i));
+		}
 		break;
 	default:
 		Q_UNREACHABLE();
-		return QByteArray();
+		break;
 	}
 
-	restorePlainText(output);
-	return output;
+	restorePlainText(buffer);
+	return buffer;
+}
+
+QByteArray QTinyAes::ctrEncrypt(const QByteArray &key, const QByteArray &iv, const QByteArray &plain)
+{
+	return QTinyAes(QTinyAes::CTR, key, iv).encrypt(plain);
+}
+
+QByteArray QTinyAes::ctrDecrypt(const QByteArray &key, const QByteArray &iv, const QByteArray &cipher)
+{
+	return QTinyAes(QTinyAes::CTR, key, iv).decrypt(cipher);
 }
 
 QByteArray QTinyAes::cbcEncrypt(const QByteArray &key, const QByteArray &iv, const QByteArray &plain)
@@ -169,22 +212,21 @@ QByteArray QTinyAes::ecbDecrypt(const QByteArray &key, const QByteArray &cipher)
 
 void QTinyAes::preparePlainText(QByteArray &data)
 {
-	QByteArray dataSize(sizeof(quint32), (char)0);
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 7, 0))
-	qToBigEndian((quint32)data.size(), dataSize.data());
-#else
-	qToBigEndian((quint32)data.size(), (uchar*)dataSize.data());
-#endif
-	data.prepend(dataSize);
-	data.append(QByteArray(QTinyAes::BLOCKSIZE - (data.size() % QTinyAes::BLOCKSIZE), 0));
+	auto padding = (BlockSize - (data.size() % BlockSize));
+	data.append(QByteArray(padding, (char)padding));
 }
 
 void QTinyAes::restorePlainText(QByteArray &data)
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 7, 0))
-	auto dataLen = qFromBigEndian<quint32>(data.constData());
-#else
-	auto dataLen = qFromBigEndian<quint32>((const uchar*)data.constData());
-#endif
-	data = data.mid(sizeof(quint32), dataLen);
+	Q_ASSERT_X(data.size() >= BlockSize, Q_FUNC_INFO, "Invalid data. Must be at least one block");
+	auto padding = data.at(data.size() - 1);
+	data.chop((int)padding);
 }
+
+
+
+QTinyAesPrivate::QTinyAesPrivate() :
+	mode(QTinyAes::CTR),
+	key(),
+	iv()
+{}
