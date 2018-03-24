@@ -6,7 +6,7 @@ This class is simply a wrapper for https://github.com/kokke/tiny-AES-C. It allow
 ## Features
  - It's a C++-class instead of just C-functions
  - Easy integration with Qt-Projects thanks to the use of QByteArray
- - Allows plain-texts of any size - [#PKCS7 Padding](https://en.wikipedia.org/wiki/Padding_(cryptography)#PKCS7) is added automatically
+ - Allows plain-texts of any size - [PKCS#7 Padding](https://en.wikipedia.org/wiki/Padding_(cryptography)#PKCS7) is added automatically
  - Supports all common AES keysizes (compile-time switch)
  - Currently supports CTR, CBC and ECB as modes
 
